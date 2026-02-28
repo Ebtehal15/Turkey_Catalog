@@ -426,9 +426,12 @@ button {
 .nav__lang-group {
   display: inline-flex;
   gap: 0.3rem;
+}
+
+.nav__lang-group--beside-title {
+  margin-left: 0.75rem;
   align-items: center;
   padding: 0.25rem 0;
-  margin: 0;
   position: relative;
 }
 

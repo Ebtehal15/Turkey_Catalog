@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
 import logoUrl from '../assets/ajlogo.png';
 import { useAdminAccess } from '../context/AdminAccessContext';
 import { usePassword } from '../context/PasswordContext';
@@ -13,11 +13,13 @@ const isSharedItemPath = (pathname: string) => /^\/items\/[^/]+$/.test(pathname)
 
 const NavBar = () => {
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const { role } = usePassword();
   const { isAdmin } = useAdminAccess();
   const { language, t, setLanguage } = useTranslate();
   const { totalItems } = useCart();
-  const isSharedView = isSharedItemPath(pathname) && role === 'none';
+  const isStandaloneUrl = searchParams.get('standalone') === '1';
+  const isSharedView = isSharedItemPath(pathname) && (role === 'none' || isStandaloneUrl);
   const [isCartOpen, setCartOpen] = useState(false);
   const [isLangDropdownOpen, setLangDropdownOpen] = useState(false);
   const cartRef = useRef<HTMLDivElement>(null);
@@ -75,11 +77,65 @@ const NavBar = () => {
     { code: 'es', label: 'ES', aria: 'Español' },
   ];
 
+  const renderLangSelector = () => (
+    <div
+      className={`nav__lang-group ${isSharedView ? 'nav__lang-group--beside-title' : ''}`}
+      ref={langDropdownRef}
+    >
+      <button
+        type="button"
+        className="nav__lang-btn nav__lang-btn--dropdown-trigger"
+        onClick={() => setLangDropdownOpen(!isLangDropdownOpen)}
+        aria-label={t('Select language', 'اختر اللغة', 'Seleccionar idioma')}
+        aria-expanded={isLangDropdownOpen}
+      >
+        {languageOptions.find((opt) => opt.code === language)?.label || 'EN'}
+        <span className="nav__lang-dropdown-arrow" aria-hidden="true">
+          {isLangDropdownOpen ? '▲' : '▼'}
+        </span>
+      </button>
+      {isLangDropdownOpen && (
+        <div className="nav__lang-dropdown">
+          {languageOptions.map(({ code, label, aria }) => (
+            <button
+              key={code}
+              type="button"
+              className={`nav__lang-dropdown-item ${language === code ? 'nav__lang-dropdown-item--active' : ''}`}
+              onClick={() => {
+                setLanguage(code);
+                setLangDropdownOpen(false);
+              }}
+              aria-label={aria}
+            >
+              {label}
+              <span className="nav__lang-dropdown-label">{aria}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="nav__lang-group--desktop">
+        {languageOptions.map(({ code, label, aria }) => (
+          <button
+            key={code}
+            type="button"
+            className={`nav__lang-btn ${language === code ? 'nav__lang-btn--active' : ''}`}
+            onClick={() => setLanguage(code)}
+            aria-label={aria}
+            title={aria}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <header className="nav">
       <div className="nav__brand">
         <img src={logoUrl} alt="Product Catalog logo" />
         <span>{labels.brand}</span>
+        {isSharedView && renderLangSelector()}
       </div>
       <nav className="nav__links">
         {!isSharedView && (
@@ -135,53 +191,7 @@ const NavBar = () => {
               )}
           </div>
         )}
-        <div className="nav__lang-group" ref={langDropdownRef}>
-          <button
-            type="button"
-            className="nav__lang-btn nav__lang-btn--dropdown-trigger"
-            onClick={() => setLangDropdownOpen(!isLangDropdownOpen)}
-            aria-label={t('Select language', 'اختر اللغة', 'Seleccionar idioma')}
-            aria-expanded={isLangDropdownOpen}
-          >
-            {languageOptions.find((opt) => opt.code === language)?.label || 'EN'}
-            <span className="nav__lang-dropdown-arrow" aria-hidden="true">
-              {isLangDropdownOpen ? '▲' : '▼'}
-            </span>
-          </button>
-          {isLangDropdownOpen && (
-            <div className="nav__lang-dropdown">
-              {languageOptions.map(({ code, label, aria }) => (
-                <button
-                  key={code}
-                  type="button"
-                  className={`nav__lang-dropdown-item ${language === code ? 'nav__lang-dropdown-item--active' : ''}`}
-                  onClick={() => {
-                    setLanguage(code);
-                    setLangDropdownOpen(false);
-                  }}
-                  aria-label={aria}
-                >
-                  {label}
-                  <span className="nav__lang-dropdown-label">{aria}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="nav__lang-group--desktop">
-          {languageOptions.map(({ code, label, aria }) => (
-            <button
-              key={code}
-              type="button"
-              className={`nav__lang-btn ${language === code ? 'nav__lang-btn--active' : ''}`}
-              onClick={() => setLanguage(code)}
-              aria-label={aria}
-              title={aria}
-            >
-              {label}
-            </button>
-          ))}
-          </div>
-        </div>
+        {!isSharedView && renderLangSelector()}
       </nav>
     </header>
   );
