@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import logoUrl from '../assets/ajlogo.png';
 import { useAdminAccess } from '../context/AdminAccessContext';
+import { usePassword } from '../context/PasswordContext';
 import useTranslate from '../hooks/useTranslate';
 import type { SupportedLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import CartSummary from './CartSummary';
 
+const isSharedItemPath = (pathname: string) => /^\/items\/[^/]+$/.test(pathname);
+
 const NavBar = () => {
+  const { pathname } = useLocation();
+  const { role } = usePassword();
   const { isAdmin } = useAdminAccess();
   const { language, t, setLanguage } = useTranslate();
   const { totalItems } = useCart();
+  const isSharedView = isSharedItemPath(pathname) && role === 'none';
   const [isCartOpen, setCartOpen] = useState(false);
   const [isLangDropdownOpen, setLangDropdownOpen] = useState(false);
   const cartRef = useRef<HTMLDivElement>(null);
@@ -76,53 +82,59 @@ const NavBar = () => {
         <span>{labels.brand}</span>
       </div>
       <nav className="nav__links">
-        <NavLink
-          to="/catalog"
-          className={({ isActive }: { isActive: boolean }) => (isActive ? 'nav__link nav__link--active' : 'nav__link')}
-        >
-          {labels.catalog}
-        </NavLink>
-        {isAdmin && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }: { isActive: boolean }) => (isActive ? 'nav__link nav__link--active' : 'nav__link')}
-          >
-            {labels.admin}
-          </NavLink>
-        )}
-        <div className="nav__cart" ref={cartRef}>
-          <button
-            type="button"
-            className="nav__cart-btn"
-            onClick={() => setCartOpen((prev) => !prev)}
-            aria-expanded={isCartOpen}
-            aria-label={t('Cart', 'السلة', 'Carrito')}
-          >
-            <span className="nav__cart-icon" aria-hidden="true">
-              🛒
-            </span>
-            <span className="nav__cart-count">{totalItems}</span>
-          </button>
-          {isCartOpen &&
-            typeof document !== 'undefined' &&
-            createPortal(
-              <>
-                <div className="nav__cart-overlay" onClick={() => setCartOpen(false)} />
-                <div className="nav__cart-popover" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    className="nav__cart-close"
-                    onClick={() => setCartOpen(false)}
-                    aria-label={t('Close cart', 'إغلاق السلة', 'Cerrar carrito')}
-                  >
-                    ×
-                  </button>
-                  <CartSummary />
-                </div>
-              </>,
-              document.body,
+        {!isSharedView && (
+          <>
+            <NavLink
+              to="/catalog"
+              className={({ isActive }: { isActive: boolean }) => (isActive ? 'nav__link nav__link--active' : 'nav__link')}
+            >
+              {labels.catalog}
+            </NavLink>
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }: { isActive: boolean }) => (isActive ? 'nav__link nav__link--active' : 'nav__link')}
+              >
+                {labels.admin}
+              </NavLink>
             )}
-        </div>
+          </>
+        )}
+        {!isSharedView && (
+          <div className="nav__cart" ref={cartRef}>
+            <button
+              type="button"
+              className="nav__cart-btn"
+              onClick={() => setCartOpen((prev) => !prev)}
+              aria-expanded={isCartOpen}
+              aria-label={t('Cart', 'السلة', 'Carrito')}
+            >
+              <span className="nav__cart-icon" aria-hidden="true">
+                🛒
+              </span>
+              <span className="nav__cart-count">{totalItems}</span>
+            </button>
+            {isCartOpen &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <>
+                  <div className="nav__cart-overlay" onClick={() => setCartOpen(false)} />
+                  <div className="nav__cart-popover" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="nav__cart-close"
+                      onClick={() => setCartOpen(false)}
+                      aria-label={t('Close cart', 'إغلاق السلة', 'Cerrar carrito')}
+                    >
+                      ×
+                    </button>
+                    <CartSummary />
+                  </div>
+                </>,
+                document.body,
+              )}
+          </div>
+        )}
         <div className="nav__lang-group" ref={langDropdownRef}>
           <button
             type="button"

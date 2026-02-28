@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ClassRecord } from '../types';
 import { fetchClassByIdentifier } from '../api/classes';
 import useTranslate from '../hooks/useTranslate';
+import { usePassword } from '../context/PasswordContext';
 import VideoPreview from '../components/VideoPreview';
 import { getCategoryLabel } from '../constants/categories';
 import { getApiBaseUrl, joinBaseUrl } from '../api/baseUrl';
+import ProductShareModal from '../components/ProductShareModal';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -21,7 +23,18 @@ const resolveVideoSrc = (value?: string | null) => {
 const ItemDetail = () => {
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
+  const { role } = usePassword();
   const { language, t } = useTranslate();
+  const [searchParams] = useSearchParams();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const isStandaloneUrl = searchParams.get('standalone') === '1';
+  const isSharedView = role === 'none' || isStandaloneUrl;
+
+  useEffect(() => {
+    if (searchParams.get('share') === '1') {
+      setShareModalOpen(true);
+    }
+  }, [searchParams]);
 
   const { data, isLoading, error } = useQuery<ClassRecord>({
     queryKey: ['classDetail', identifier],
@@ -61,19 +74,54 @@ const ItemDetail = () => {
     );
   }
 
+  const shareUrl = typeof window !== 'undefined' && identifier
+    ? `${window.location.origin}/items/${encodeURIComponent(identifier)}?standalone=1`
+    : '';
+
   return (
     <section className="panel item-detail">
       <div className="item-detail__header">
-        <button
-          type="button"
-          className="btn-link"
-          onClick={() => navigate(-1)}
-        >
-          ←
-          {' '}
-          {t('Back to catalog', 'العودة إلى الكتالوج', 'Volver al catálogo')}
-        </button>
+        {!isSharedView && (
+          <button
+            type="button"
+            className="btn-link"
+            onClick={() => navigate(-1)}
+          >
+            ←
+            {' '}
+            {t('Back to catalog', 'العودة إلى الكتالوج', 'Volver al catálogo')}
+          </button>
+        )}
+        {shareUrl && (
+          <button
+            type="button"
+            className="item-detail__share-btn"
+            onClick={() => setShareModalOpen(true)}
+            aria-label={t('Share product', 'مشاركة المنتج', 'Compartir producto', 'Ürünü paylaş')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none" />
+              <rect x="14" y="14" width="2" height="2" rx="0.4" />
+              <rect x="18" y="14" width="2" height="2" rx="0.4" />
+              <rect x="14" y="18" width="2" height="2" rx="0.4" />
+              <rect x="18" y="18" width="2" height="2" rx="0.4" />
+            </svg>
+            {t('Share / QR', 'مشاركة / رمز QR', 'Compartir / QR', 'Paylaş / QR')}
+          </button>
+        )}
       </div>
+
+      <ProductShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        productUrl={shareUrl}
+        productName={title}
+      />
 
       <div className="card item-detail__card">
         <header className="item-detail__card-header">

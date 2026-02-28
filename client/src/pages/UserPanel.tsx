@@ -639,6 +639,25 @@ const UserPanel = () => {
                                 </button>
                                 <button
                                   type="button"
+                                  className="share-qr-toggle"
+                                  onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`)}
+                                  aria-label={t('Share / QR', 'مشاركة / رمز QR', 'Compartir / QR', 'Paylaş / QR')}
+                                >
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                                    <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+                                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                                    <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+                                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                                    <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none" />
+                                    <rect x="14" y="14" width="2" height="2" rx="0.4" />
+                                    <rect x="18" y="14" width="2" height="2" rx="0.4" />
+                                    <rect x="14" y="18" width="2" height="2" rx="0.4" />
+                                    <rect x="18" y="18" width="2" height="2" rx="0.4" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
                                   className="table-link"
                                   onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}`)}
                                 >
@@ -755,6 +774,25 @@ const UserPanel = () => {
                               : t('Add to favorites', 'إضافة إلى المفضلة', 'Agregar a favoritos', 'Favorilere ekle')}
                           >
                             <HeartIcon active={isFavorite(item.id)} />
+                          </button>
+                          <button
+                            type="button"
+                            className="share-qr-toggle share-qr-toggle--inline"
+                            onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`)}
+                            aria-label={t('Share / QR', 'مشاركة / رمز QR', 'Compartir / QR', 'Paylaş / QR')}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="3" y="3" width="7" height="7" rx="1" />
+                              <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+                              <rect x="14" y="3" width="7" height="7" rx="1" />
+                              <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none" />
+                              <rect x="3" y="14" width="7" height="7" rx="1" />
+                              <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none" />
+                              <rect x="14" y="14" width="2" height="2" rx="0.4" />
+                              <rect x="18" y="14" width="2" height="2" rx="0.4" />
+                              <rect x="14" y="18" width="2" height="2" rx="0.4" />
+                              <rect x="18" y="18" width="2" height="2" rx="0.4" />
+                            </svg>
                           </button>
                           {!isExpanded ? (
                             <button

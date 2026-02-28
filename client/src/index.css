@@ -2507,6 +2507,30 @@ button.danger:hover:not(:disabled) {
   gap: 0.35rem;
 }
 
+.share-qr-toggle {
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 999px;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.share-qr-toggle:hover {
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.share-qr-toggle--inline {
+  vertical-align: middle;
+}
+
 .table-cell-with-favorite__value {
   display: inline-block;
 }
@@ -2637,7 +2661,30 @@ button.danger:hover:not(:disabled) {
 
 .item-detail__header {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.item-detail__share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.item-detail__share-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
 }
 
 .item-detail__card {
@@ -2676,6 +2723,59 @@ button.danger:hover:not(:disabled) {
 .item-detail__video {
   min-width: 220px;
   max-width: 280px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .item-detail__card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+
+  .item-detail__video {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .item-detail__video .video-player {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .item-detail__title {
+    font-size: 1.35rem;
+  }
+
+  .item-detail__grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .item-detail__card {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .item-detail__share-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .item-detail__card {
+    padding: 1rem;
+  }
+
+  .item-detail__title {
+    font-size: 1.2rem;
+  }
+
+  .item-detail__title-alt {
+    font-size: 0.875rem;
+  }
 }
 
 .item-detail__body {
@@ -2716,6 +2816,106 @@ button.danger:hover:not(:disabled) {
   margin: 0;
   color: #4b5563;
   line-height: 1.6;
+}
+
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.share-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  max-width: 400px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.share-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.share-modal__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.share-modal__close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.share-modal__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.share-modal__body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.share-modal__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.share-modal__qr-wrap {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.share-modal__qr-wrap svg {
+  display: block;
+}
+
+.share-modal__product {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.share-modal__url {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  word-break: break-all;
+  text-align: center;
+  max-width: 100%;
 }
 
 .btn-link {

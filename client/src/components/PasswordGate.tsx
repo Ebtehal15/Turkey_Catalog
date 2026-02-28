@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { usePassword } from '../context/PasswordContext';
 import useTranslate from '../hooks/useTranslate';
 
@@ -8,26 +8,29 @@ interface PasswordGateProps {
   children: ReactNode;
 }
 
+const isSharedItemPath = (pathname: string) => /^\/items\/[^/]+$/.test(pathname);
+
 const PasswordGate = ({ children }: PasswordGateProps) => {
   const { role, authorize } = usePassword();
   const { t } = useTranslate();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Automatically grant user access if no password is required
+  const isPublicItemView = isSharedItemPath(pathname);
+
   useEffect(() => {
-    if (role === 'none') {
+    if (role === 'none' && !isPublicItemView) {
       const envUserPassword = import.meta.env.VITE_USER_PASSWORD;
-      // If user password is empty or not set, automatically grant user access
       if (!envUserPassword || envUserPassword.trim() === '') {
         authorize('');
         navigate('/catalog');
       }
     }
-  }, [role, authorize, navigate]);
+  }, [role, authorize, navigate, isPublicItemView]);
 
-  if (role !== 'none') {
+  if (role !== 'none' || isPublicItemView) {
     return <>{children}</>;
   }
 
