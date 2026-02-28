@@ -2918,6 +2918,56 @@ button.danger:hover:not(:disabled) {
   max-width: 100%;
 }
 
+.share-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.share-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.share-modal__btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.share-modal__btn--primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.share-modal__btn--secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.share-modal__btn--secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.share-modal__btn--success {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
 .btn-link {
   border: none !important;
   background: transparent !important;
