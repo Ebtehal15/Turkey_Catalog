@@ -65,8 +65,8 @@ const CartIconGlyph = () => (
 const HeartIcon = ({ active }: { active: boolean }) => (
   <svg
     className="favorite-toggle__icon"
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     aria-hidden="true"
   >
@@ -288,17 +288,14 @@ const UserPanel = () => {
       ...prev,
       [name]: value || undefined,
     }));
-    
-    // On mobile, scroll to results when filter changes
-    if (window.innerWidth <= 768 && resultsRef.current) {
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
   };
 
   const handleClearFilters = () => {
     setFilters({});
+  };
+
+  const scrollToResults = () => {
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Count active filters
@@ -342,8 +339,8 @@ const UserPanel = () => {
                 aria-expanded={filtersExpanded}
                 aria-label={filtersExpanded ? t('Hide filters', 'إخفاء الفلاتر', 'Ocultar filtros') : t('Show filters', 'إظهار الفلاتر', 'Mostrar filtros')}
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
                 </svg>
               </button>
             )}
@@ -353,24 +350,50 @@ const UserPanel = () => {
           <div className="catalog-filters__grid">
             <label>
               {t('Item Name', 'اسم المنتج', 'Nombre del producto', 'Ürün Adı')}
-              <input
-                type="search"
-                name="classNameSearch"
-                value={filters.classNameSearch ?? ''}
-                onChange={handleFilterChange}
-              placeholder={t('Search by class name', 'ابحث باسم الصنف', 'Buscar por nombre del producto', 'Ürün adına göre ara')}
-              />
+              <span className="catalog-filters__input-with-icon">
+                <input
+                  type="search"
+                  name="classNameSearch"
+                  value={filters.classNameSearch ?? ''}
+                  onChange={handleFilterChange}
+                  placeholder={t('Search by class name', 'ابحث باسم الصنف', 'Buscar por nombre del producto', 'Ürün adına göre ara')}
+                />
+                <button
+                  type="button"
+                  className="catalog-filters__input-icon catalog-filters__input-icon--btn"
+                  onClick={scrollToResults}
+                  aria-label={t('Go to results', 'الانتقال إلى النتائج', 'Ir a resultados', 'Sonuçlara git')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </span>
             </label>
 
             <label>
               {t('Code', 'الرمز', 'Código', 'Kod')}
-              <input
-                type="search"
-                name="codeSearch"
-                value={filters.codeSearch ?? ''}
-                onChange={handleFilterChange}
-              placeholder={t('Search by code', 'ابحث بالرمز', 'Buscar por código', 'Koda göre ara')}
-              />
+              <span className="catalog-filters__input-with-icon">
+                <input
+                  type="search"
+                  name="codeSearch"
+                  value={filters.codeSearch ?? ''}
+                  onChange={handleFilterChange}
+                  placeholder={t('Search by code', 'ابحث بالرمز', 'Buscar por código', 'Koda göre ara')}
+                />
+                <button
+                  type="button"
+                  className="catalog-filters__input-icon catalog-filters__input-icon--btn"
+                  onClick={scrollToResults}
+                  aria-label={t('Go to results', 'الانتقال إلى النتائج', 'Ir a resultados', 'Sonuçlara git')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </span>
             </label>
 
             <label>
@@ -435,16 +458,46 @@ const UserPanel = () => {
         <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
           <h3 style={{ margin: '0 0 0.5rem', color: '#1e293b' }}>
-            {t('No products found', 'لم يتم العثور على منتجات', 'No se encontraron productos', 'Ürün bulunamadı')}
+            {showOnlyFavorites
+              ? t('No favorites yet', 'لا توجد مفضلات بعد', 'No hay favoritos aún', 'Henüz favori yok')
+              : t('No products found', 'لم يتم العثور على منتجات', 'No se encontraron productos', 'Ürün bulunamadı')}
           </h3>
           <p style={{ color: '#64748b', margin: 0 }}>
-            {t(
-              'Try adjusting your filters to see more results.',
-              'جرب تعديل الفلاتر لرؤية المزيد من النتائج.',
-              'Intenta ajustar tus filtros para ver más resultados.',
-              'Daha fazla sonuç görmek için filtreleri değiştirmeyi deneyin.',
-            )}
+            {showOnlyFavorites
+              ? t(
+                  'Add items from the catalog to your favorites.',
+                  'أضف منتجات من الكتالوج إلى المفضلة.',
+                  'Añade productos del catálogo a favoritos.',
+                  'Katalogdan ürünleri favorilere ekleyebilirsiniz.',
+                )
+              : t(
+                  'Try adjusting your filters to see more results.',
+                  'جرب تعديل الفلاتر لرؤية المزيد من النتائج.',
+                  'Intenta ajustar tus filtros para ver más resultados.',
+                  'Daha fazla sonuç görmek için filtreleri değiştirmeyi deneyin.',
+                )}
           </p>
+          <div style={{ marginTop: '1.25rem' }}>
+            {showOnlyFavorites ? (
+              <button
+                type="button"
+                className="secondary"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                onClick={() => setShowOnlyFavorites(false)}
+              >
+                {t('Back to catalog', 'العودة إلى الكتالوج', 'Volver al catálogo', 'Ana menüye dön')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="secondary"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                onClick={() => setFilters({})}
+              >
+                {t('Show all products', 'عرض كل المنتجات', 'Ver todos los productos', 'Tüm ürünleri göster')}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
