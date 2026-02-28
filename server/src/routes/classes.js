@@ -7,7 +7,9 @@ const axios = require('axios');
 const { db } = require('../db');
 const { getNextSpecialId, parseClassPayload, getTurkeyTimestamp } = require('../utils');
 
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.join(__dirname, '..', '..', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -106,9 +108,15 @@ router.get('/', (req, res) => {
     SELECT * FROM classes
     ${whereClause}
     ORDER BY 
+      -- Önce videosu olan ürünler
       CASE 
         WHEN class_video IS NOT NULL AND class_video != '' THEN 0 
         ELSE 1 
+      END ASC,
+      -- Sonra kategorisi olanlar, kategorisi boş olanlar en sona
+      CASE 
+        WHEN main_category IS NULL OR TRIM(main_category) = '' THEN 1
+        ELSE 0
       END ASC,
       main_category ASC, 
       quality ASC, 
@@ -228,6 +236,52 @@ router.post(
     }
   }
 );
+
+// Bulk text replace for class fields (e.g., normalize group/main category names)
+router.post('/bulk-replace-text', (req, res) => {
+  const { field, search, replace } = req.body || {};
+
+  if (!field || typeof field !== 'string') {
+    res.status(400).json({ message: 'Field is required.' });
+    return;
+  }
+
+  if (!search || typeof search !== 'string') {
+    res.status(400).json({ message: 'Search text is required.' });
+    return;
+  }
+
+  const allowedFields = {
+    mainCategory: 'main_category',
+    quality: 'quality',
+    className: 'class_name',
+    classNameArabic: 'class_name_ar',
+    classNameEnglish: 'class_name_en',
+  };
+
+  const column = allowedFields[field];
+  if (!column) {
+    res.status(400).json({ message: 'Invalid field.' });
+    return;
+  }
+
+  const searchText = String(search);
+  const replaceText = replace !== undefined && replace !== null ? String(replace) : '';
+
+  const sql = `
+    UPDATE classes
+    SET ${column} = REPLACE(${column}, ?, ?)
+    WHERE ${column} LIKE ?
+  `;
+
+  db.run(sql, [searchText, replaceText, `%${searchText}%`], function onUpdate(err) {
+    if (err) {
+      res.status(500).json({ message: 'Failed to apply bulk replace', error: err.message });
+      return;
+    }
+    res.json({ updatedCount: this.changes ?? 0 });
+  });
+});
 
 router.put(
   '/:id',
@@ -902,10 +956,11 @@ router.get('/:id/price-history', (req, res) => {
 
 // Get all products with recent price changes
 router.get('/price-changes/recent', (req, res) => {
-  const { limit = 50 } = req.query;
+  const { limit } = req.query;
+  const limitValue = limit ? parseInt(limit, 10) : null;
 
-  db.all(
-    `SELECT 
+  const query = limitValue && limitValue > 0
+    ? `SELECT 
       ph.id,
       ph.class_id,
       ph.old_price,
@@ -920,28 +975,44 @@ router.get('/price-changes/recent', (req, res) => {
     FROM price_history ph
     INNER JOIN classes c ON ph.class_id = c.id
     ORDER BY ph.changed_at DESC
-    LIMIT ?`,
-    [parseInt(limit, 10)],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ message: 'Failed to retrieve price changes', error: err.message });
-        return;
-      }
-      res.json(rows.map((row) => ({
-        id: row.id,
-        classId: row.class_id,
-        specialId: row.special_id,
-        className: row.class_name,
-        classNameArabic: row.class_name_ar,
-        classNameEnglish: row.class_name_en,
-        mainCategory: row.main_category,
-        quality: row.quality,
-        oldPrice: row.old_price,
-        newPrice: row.new_price,
-        changedAt: row.changed_at,
-      })));
+    LIMIT ?`
+    : `SELECT 
+      ph.id,
+      ph.class_id,
+      ph.old_price,
+      ph.new_price,
+      ph.changed_at,
+      c.special_id,
+      c.class_name,
+      c.class_name_ar,
+      c.class_name_en,
+      c.main_category,
+      c.quality
+    FROM price_history ph
+    INNER JOIN classes c ON ph.class_id = c.id
+    ORDER BY ph.changed_at DESC`;
+
+  const params = limitValue && limitValue > 0 ? [limitValue] : [];
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      res.status(500).json({ message: 'Failed to retrieve price changes', error: err.message });
+      return;
     }
-  );
+    res.json(rows.map((row) => ({
+      id: row.id,
+      classId: row.class_id,
+      specialId: row.special_id,
+      className: row.class_name,
+      classNameArabic: row.class_name_ar,
+      classNameEnglish: row.class_name_en,
+      mainCategory: row.main_category,
+      quality: row.quality,
+      oldPrice: row.old_price,
+      newPrice: row.new_price,
+      changedAt: row.changed_at,
+    })));
+  });
 });
 
 module.exports = router;

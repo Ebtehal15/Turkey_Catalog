@@ -8,6 +8,11 @@ export const fetchClasses = async (filters: ClassFilters = {}): Promise<ClassRec
   return response.data;
 };
 
+export const fetchClassByIdentifier = async (identifier: string | number): Promise<ClassRecord> => {
+  const response = await apiClient.get<ClassRecord>(`/api/classes/${identifier}`);
+  return response.data;
+};
+
 export const generateSpecialId = async (prefix?: string): Promise<string> => {
   const response = await apiClient.post<{ specialId: string }>('/api/classes/generate-id', {
     prefix,
@@ -45,6 +50,22 @@ export const bulkUploadClasses = async (formData: FormData): Promise<BulkUploadR
   return response.data;
 };
 
+export type BulkReplaceField =
+  | 'mainCategory'
+  | 'quality'
+  | 'className'
+  | 'classNameArabic'
+  | 'classNameEnglish';
+
+export const bulkReplaceClasses = async (params: {
+  field: BulkReplaceField;
+  search: string;
+  replace: string;
+}): Promise<{ updatedCount: number }> => {
+  const response = await apiClient.post<{ updatedCount: number }>('/api/classes/bulk-replace-text', params);
+  return response.data;
+};
+
 export const syncFromGoogleSheets = async (sheetsUrl: string, updateOnly: boolean = false): Promise<BulkUploadResult> => {
   const response = await apiClient.post<BulkUploadResult>('/api/classes/sync-from-sheets', {
     sheetsUrl,
@@ -79,9 +100,9 @@ export const fetchPriceHistory = async (classId: number): Promise<PriceHistoryIt
   return response.data;
 };
 
-export const fetchRecentPriceChanges = async (limit: number = 50): Promise<PriceChangeItem[]> => {
+export const fetchRecentPriceChanges = async (limit?: number): Promise<PriceChangeItem[]> => {
   const response = await apiClient.get<PriceChangeItem[]>('/api/classes/price-changes/recent', {
-    params: { limit },
+    params: limit && limit > 0 ? { limit } : {},
   });
   return response.data;
 };

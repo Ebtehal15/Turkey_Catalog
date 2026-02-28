@@ -1,7 +1,7 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './baseUrl';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 
-  (import.meta.env.PROD ? 'https://cillii.onrender.com' : 'http://localhost:4000');
+const baseURL = getApiBaseUrl();
 
 const apiClient = axios.create({
   baseURL,
@@ -11,12 +11,13 @@ const apiClient = axios.create({
 // Request interceptor - giden istekleri logla
 apiClient.interceptors.request.use(
   (config) => {
-    console.log('🚀 API Request:', config.method?.toUpperCase(), config.url, config.data);
-    console.log('🍪 Request cookies:', document.cookie);
-    console.log('🔧 Request config:', {
-      withCredentials: config.withCredentials,
-      baseURL: config.baseURL
-    });
+    if (import.meta.env.DEV) {
+      console.log('🚀 API Request:', config.method?.toUpperCase(), config.url, config.data);
+      console.log('🔧 Request config:', {
+        withCredentials: config.withCredentials,
+        baseURL: config.baseURL,
+      });
+    }
     return config;
   },
   (error) => {
@@ -28,12 +29,13 @@ apiClient.interceptors.request.use(
 // Response interceptor - gelen cevapları logla
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('✅ API Response:', response.status, response.config.url, response.data);
-    console.log('🍪 Response cookies after request:', document.cookie);
-    console.log('🔧 Response headers:', {
-      'set-cookie': response.headers['set-cookie'],
-      'access-control-allow-credentials': response.headers['access-control-allow-credentials']
-    });
+    if (import.meta.env.DEV) {
+      console.log('✅ API Response:', response.status, response.config.url, response.data);
+      console.log('🔧 Response headers:', {
+        'set-cookie': response.headers['set-cookie'],
+        'access-control-allow-credentials': response.headers['access-control-allow-credentials'],
+      });
+    }
     return response;
   },
   (error) => {

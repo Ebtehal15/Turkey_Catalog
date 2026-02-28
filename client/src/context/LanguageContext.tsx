@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 
-export type SupportedLanguage = 'en' | 'ar' | 'es';
+export type SupportedLanguage = 'en' | 'ar' | 'tr' | 'es';
 
 interface LanguageContextValue {
   language: SupportedLanguage;
@@ -24,7 +24,7 @@ const getInitialLanguage = (): SupportedLanguage => {
     return 'en';
   }
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === 'ar' || stored === 'es' ? stored : 'en';
+  return stored === 'ar' || stored === 'tr' || stored === 'es' ? stored as SupportedLanguage : 'en';
 };
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
@@ -45,6 +45,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         return 'ar';
       }
       if (prev === 'ar') {
+        return 'tr';
+      }
+      if (prev === 'tr') {
         return 'es';
       }
       return 'en';

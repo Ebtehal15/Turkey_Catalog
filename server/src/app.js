@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { initializeDatabase } = require('./db');
 const classesRouter = require('./routes/classes');
 const { router: settingsRouter } = require('./routes/settings');
@@ -15,17 +16,51 @@ initializeDatabase();
 const app = express();
 
 // 🔹 Genel Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000', 
-    'https://cillii-1.onrender.com'
-  ],
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  // Render/Reverse-proxy arkasında secure cookie için gerekli
+  app.set('trust proxy', 1);
+}
+
+// CORS yapılandırması
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowAll = process.env.CORS_ALLOW_ALL === 'true';
+
+    // Development'ta (veya allowAll açıkken) tüm origin'lere izin ver
+    if (!isProduction || allowAll) {
+      callback(null, true);
+    } else {
+      // Production'da sadece env ile verilen origin'lere izin ver
+      const allowedOrigins = (process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map((value) => value.trim().replace(/\/+$/, '')) // sonundaki / kaldır
+        .filter(Boolean);
+
+      if (allowedOrigins.length === 0) {
+        console.warn('⚠️ CORS_ORIGINS boş; frontend origin’lerine izin vermek için CORS_ORIGINS env’ini ayarlayın.');
+      }
+
+      // Tarayıcı bazen origin’i sonunda / ile göndermez; karşılaştırmada normalize et
+      const originNormalized = (origin || '').replace(/\/+$/, '');
+      const allowed = !origin || allowedOrigins.some((o) => o === origin || o === originNormalized);
+
+      if (allowed) {
+        callback(null, true);
+      } else {
+        console.warn('⚠️ CORS blocked origin:', origin, '| İzin verilenler:', allowedOrigins);
+        callback(new Error('CORS policy violation'));
+      }
+    }
+  },
   credentials: true, // Session cookie'leri için kritik
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200,
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,32 +71,42 @@ app.use(session({
   saveUninitialized: true, // Boş session'ları da kaydet
   rolling: false, // Cookie süresini sabit tut
   name: 'connect.sid', // Standart session name
+  proxy: isProduction,
   cookie: {
-    secure: false, // Önce false deneyelim
-    httpOnly: false, // JavaScript erişimi için false
+    secure: isProduction, // HTTPS üzerinde zorunlu (Render)
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 saat
-    sameSite: 'lax', // Daha uyumlu seçenek
+    // Frontend (Static Site) ve Backend (Web Service) ayrı domain olduğunda cookie için gerekir
+    sameSite: isProduction ? 'none' : 'lax',
     domain: undefined, // Auto-detect domain
     path: '/', // Tüm path'lerde geçerli
   },
 }));
 
 // 🔍 Session Debug Middleware
-app.use((req, res, next) => {
-  console.log('🔍 Session Debug:', {
-    sessionID: req.sessionID,
-    hasSession: !!req.session,
-    cartExists: !!req.session?.cart,
-    cartLength: req.session?.cart?.length || 0,
-    userAgent: req.get('User-Agent')?.substring(0, 50),
-    origin: req.get('Origin'),
-    cookie: req.get('Cookie')?.substring(0, 100)
+if (process.env.SESSION_DEBUG === 'true') {
+  app.use((req, _res, next) => {
+    console.log('🔍 Session Debug:', {
+      sessionID: req.sessionID,
+      hasSession: !!req.session,
+      cartExists: !!req.session?.cart,
+      cartLength: req.session?.cart?.length || 0,
+      userAgent: req.get('User-Agent')?.substring(0, 50),
+      origin: req.get('Origin'),
+      cookie: req.get('Cookie')?.substring(0, 100),
+    });
+    next();
   });
-  next();
-});
+}
 
 // 📁 Uploads klasör yolu
-const uploadsPath = path.resolve(__dirname, '..', 'uploads');
+const uploadsPath = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.resolve(__dirname, '..', 'uploads');
+
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
 
 // ✅ Upload dosyalarını doğru header’larla servis et
 app.use(
@@ -99,8 +144,10 @@ app.use('/api/orders', ordersRouter);
 
 // ✅ Sunucuyu başlat
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
+const host = process.env.HOST || '0.0.0.0'; // Tüm ağ arayüzlerinde dinle
+app.listen(port, host, () => {
+  console.log(`🚀 Server running on http://${host}:${port}`);
+  console.log(`🌐 Accessible from external IPs on port ${port}`);
 });
 
 module.exports = app;

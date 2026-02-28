@@ -1,9 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AdminPanel from './pages/AdminPanel';
 import UserPanel from './pages/UserPanel';
+import ItemDetail from './pages/ItemDetail';
 import NavBar from './components/NavBar';
 import PasswordGate from './components/PasswordGate';
 import AdminGate from './components/AdminGate';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 const AppContent = () => {
 
@@ -14,6 +16,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/catalog" replace />} />
           <Route path="/catalog" element={<UserPanel />} />
+          <Route path="/items/:identifier" element={<ItemDetail />} />
           <Route
             path="/admin"
             element={(
@@ -30,7 +33,9 @@ const AppContent = () => {
 
 const App = () => (
   <PasswordGate>
-    <AppContent />
+    <FavoritesProvider>
+      <AppContent />
+    </FavoritesProvider>
   </PasswordGate>
 );
 

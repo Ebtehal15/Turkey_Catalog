@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useClasses } from '../hooks/useClasses';
 import type { ClassFilters, ClassRecord, ColumnVisibility, ColumnKey } from '../types';
@@ -10,17 +11,13 @@ import {
   defaultColumnVisibility,
   orderedColumns,
 } from '../constants/columns';
+import { getCategoryLabel } from '../constants/categories';
 import useTranslate from '../hooks/useTranslate';
 import { useCart } from '../context/CartContext';
+import { useFavorites } from '../context/FavoritesContext';
+import { getApiBaseUrl, joinBaseUrl } from '../api/baseUrl';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 
-  (import.meta.env.PROD ? 'https://cillii.onrender.com' : 'http://localhost:4000');
-
-const joinBaseUrl = (base: string, path: string) => {
-  const normalizedBase = base.replace(/\/$/, '');
-  const normalizedPath = path.replace(/^\//, '');
-  return `${normalizedBase}/${normalizedPath}`;
-};
+const API_BASE_URL = getApiBaseUrl();
 
 const resolveVideoSrc = (value?: string | null) => {
   if (!value) {
@@ -65,15 +62,37 @@ const CartIconGlyph = () => (
   </svg>
 );
 
+const HeartIcon = ({ active }: { active: boolean }) => (
+  <svg
+    className="favorite-toggle__icon"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
+      className={active ? 'favorite-toggle__path favorite-toggle__path--active' : 'favorite-toggle__path'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const isBrowser = typeof window !== 'undefined';
 
 const UserPanel = () => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ClassFilters>({});
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
   const [userHasSelected, setUserHasSelected] = useState(false);
   const [expandedControls, setExpandedControls] = useState<Record<number, boolean>>({});
   const [isMobileView, setIsMobileView] = useState<boolean>(() => (isBrowser ? window.innerWidth <= 600 : false));
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
   const { data: allClasses = [] } = useClasses();
   const { data: classes = [], isLoading, error } = useClasses(filters);
   const { language, t } = useTranslate();
@@ -83,6 +102,12 @@ const UserPanel = () => {
     removeItem,
     updateQuantity,
   } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
+
+  const visibleClasses = useMemo(
+    () => (showOnlyFavorites ? classes.filter((item) => isFavorite(item.id)) : classes),
+    [classes, showOnlyFavorites, isFavorite],
+  );
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Ekran boyutu değiştiğinde mobil durumunu ve varsayılan görünümü güncelle
@@ -173,6 +198,16 @@ const UserPanel = () => {
     return Array.from(set).sort();
   }, [allClasses]);
 
+  const mainCategories = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    allClasses.forEach((item) => {
+      if (item.mainCategory) {
+        set.add(item.mainCategory);
+      }
+    });
+    return Array.from(set).sort();
+  }, [allClasses]);
+
   const columnVisibilityQuery = useQuery({
     queryKey: ['columnVisibility'],
     queryFn: fetchColumnVisibility,
@@ -202,7 +237,7 @@ const UserPanel = () => {
       case 'specialId':
         return item.specialId;
       case 'mainCategory':
-        return item.mainCategory;
+        return getCategoryLabel(item.mainCategory, language);
       case 'quality':
         return item.quality;
       case 'className':
@@ -271,6 +306,7 @@ const UserPanel = () => {
     let count = 0;
     if (filters.classNameSearch) count++;
     if (filters.codeSearch) count++;
+    if (filters.category) count++;
     if (filters.quality) count++;
     return count;
   }, [filters]);
@@ -289,8 +325,14 @@ const UserPanel = () => {
         <div className="catalog-filters__header">
           <div className="catalog-filters__header-content">
             <div>
-              <h2>{t('Search & Filters', 'البحث والتصفية', 'Búsqueda y Filtros')}</h2>
-              <p>{t('Use flexible filters to focus on the categories and groups that fit the brief.', 'استخدم خيارات التصفية للتركيز على الفئات المناسبة.', 'Utiliza filtros flexibles para enfocarte en las categorías y grupos adecuados.')}</p>
+              <h2>{t('Search & Filters', 'البحث والتصفية', 'Búsqueda y Filtros', 'Arama ve Filtreler')}</h2>
+              <p>{t(
+                'Use flexible filters to focus on the categories and groups that fit the brief.',
+                'استخدم خيارات التصفية للتركيز على الفئات المناسبة.',
+                'Utiliza filtros flexibles para enfocarte en las categorías y grupos adecuados.',
+                'İhtiyacınıza uygun kategori ve gruplara odaklanmak için esnek filtreleri kullanın.',
+              )}
+              </p>
             </div>
             {isMobileView && (
               <button
@@ -310,35 +352,51 @@ const UserPanel = () => {
         <div className={`catalog-filters__content ${filtersExpanded || !isMobileView ? 'catalog-filters__content--visible' : ''}`}>
           <div className="catalog-filters__grid">
             <label>
-              {t('Class Name', 'اسم الصنف', 'Nombre del producto')}
+              {t('Item Name', 'اسم المنتج', 'Nombre del producto', 'Ürün Adı')}
               <input
                 type="search"
                 name="classNameSearch"
                 value={filters.classNameSearch ?? ''}
                 onChange={handleFilterChange}
-                placeholder={t('Search by class name', 'ابحث باسم الصنف', 'Buscar por nombre del producto')}
+              placeholder={t('Search by class name', 'ابحث باسم الصنف', 'Buscar por nombre del producto', 'Ürün adına göre ara')}
               />
             </label>
 
             <label>
-              {t('Code', 'الرمز', 'Código')}
+              {t('Code', 'الرمز', 'Código', 'Kod')}
               <input
                 type="search"
                 name="codeSearch"
                 value={filters.codeSearch ?? ''}
                 onChange={handleFilterChange}
-                placeholder={t('Search by code', 'ابحث بالرمز', 'Buscar por código')}
+              placeholder={t('Search by code', 'ابحث بالرمز', 'Buscar por código', 'Koda göre ara')}
               />
             </label>
 
             <label>
-              {t('Group', 'المجموعة', 'Grupo')}
+              {t('Category', 'الفئة', 'Categoría', 'Kategori')}
+              <select
+                name="category"
+                value={filters.category ?? ''}
+                onChange={handleFilterChange}
+              >
+                <option value="">{t('All', 'الكل', 'Todos', 'Tümü')}</option>
+                {mainCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {getCategoryLabel(category, language)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              {t('Group', 'المجموعة', 'Grupo', 'Grup')}
               <select
                 name="quality"
                 value={filters.quality ?? ''}
                 onChange={handleFilterChange}
               >
-                <option value="">{t('All', 'الكل', 'Todos')}</option>
+                <option value="">{t('All', 'الكل', 'Todos', 'Tümü')}</option>
                 {groups.map((group) => (
                   <option key={group} value={group}>{group}</option>
                 ))}
@@ -351,7 +409,7 @@ const UserPanel = () => {
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                {t('Clear Filters', 'إزالة الفلترة', 'Limpiar filtros')}
+                {t('Clear Filters', 'إزالة الفلترة', 'Limpiar filtros', 'Filtreleri Temizle')}
               </button>
             )}
           </div>
@@ -362,35 +420,50 @@ const UserPanel = () => {
         <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
           <p style={{ fontSize: '1.1rem', color: '#64748b', margin: 0 }}>
-            {t('Loading catalog...', 'جاري تحميل الكتالوج...', 'Cargando catálogo...')}
+            {t('Loading catalog...', 'جاري تحميل الكتالوج...', 'Cargando catálogo...', 'Katalog yükleniyor...')}
           </p>
         </div>
       )}
       {error && (
         <div className="card" style={{ background: '#fef2f2', border: '2px solid #fecaca', padding: '1.5rem' }}>
           <p style={{ color: '#dc2626', margin: 0, fontWeight: 600 }}>
-            {t('Failed to load catalog.', 'تعذر تحميل الكتالوج.', 'No se pudo cargar el catálogo.')}
+            {t('Failed to load catalog.', 'تعذر تحميل الكتالوج.', 'No se pudo cargar el catálogo.', 'Katalog yüklenemedi.')}
           </p>
         </div>
       )}
-      {!isLoading && !error && !classes.length && (
+      {!isLoading && !error && !visibleClasses.length && (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
           <h3 style={{ margin: '0 0 0.5rem', color: '#1e293b' }}>
-            {t('No products found', 'لم يتم العثور على منتجات', 'No se encontraron productos')}
+            {t('No products found', 'لم يتم العثور على منتجات', 'No se encontraron productos', 'Ürün bulunamadı')}
           </h3>
           <p style={{ color: '#64748b', margin: 0 }}>
-            {t('Try adjusting your filters to see more results.', 'جرب تعديل الفلاتر لرؤية المزيد من النتائج.', 'Intenta ajustar tus filtros para ver más resultados.')}
+            {t(
+              'Try adjusting your filters to see more results.',
+              'جرب تعديل الفلاتر لرؤية المزيد من النتائج.',
+              'Intenta ajustar tus filtros para ver más resultados.',
+              'Daha fazla sonuç görmek için filtreleri değiştirmeyi deneyin.',
+            )}
           </p>
         </div>
       )}
 
-      {!isLoading && classes.length > 0 && (
+      {!isLoading && visibleClasses.length > 0 && (
         <div className="card catalog-table" ref={resultsRef}>
           <div className="catalog-table__header">
             <div>
-              <h2>{t('Available Classes', 'الأصناف المتاحة', 'Productos Disponibles')}</h2>
-              <p>{t('High-level overview of every class.', ' نظرة شاملة على جميع الأصناف .', 'Resumen detallado de cada producto.')}</p>
+              <h2>
+                {t('Available Items', 'المنتجات المتاحة', 'Productos disponibles', 'Mevcut Ürünler')}
+                {' '}
+                ({visibleClasses.length})
+              </h2>
+              <p>{t(
+                'High-level overview of every item.',
+                ' نظرة شاملة على جميع المنتجات .',
+                'Resumen detallado de cada producto.',
+                'Tüm ürünlere yüksek seviyede genel bir bakış.',
+              )}
+              </p>
             </div>
           </div>
           <div className="catalog-view-toggle" role="group" aria-label="View mode">
@@ -401,9 +474,10 @@ const UserPanel = () => {
               onClick={() => {
                 setViewMode('table');
                 setUserHasSelected(true);
+                setShowOnlyFavorites(false);
               }}
             >
-              {t('Table', 'جدول', 'Tabla')}
+              {t('Table', 'جدول', 'Tabla', 'Tablo')}
             </button>
             <button
               type="button"
@@ -412,9 +486,18 @@ const UserPanel = () => {
               onClick={() => {
                 setViewMode('cards');
                 setUserHasSelected(true);
+                setShowOnlyFavorites(false);
               }}
             >
-              {t('Cards', 'بطاقات', 'Tarjetas')}
+              {t('Cards', 'بطاقات', 'Tarjetas', 'Kartlar')}
+            </button>
+            <button
+              type="button"
+              className={showOnlyFavorites ? 'active' : ''}
+              aria-pressed={showOnlyFavorites}
+              onClick={() => setShowOnlyFavorites((prev) => !prev)}
+            >
+              {t('Favorites', 'المفضلة', 'Favoritos', 'Favoriler')}
             </button>
           </div>
           {viewMode === 'table' ? (
@@ -426,7 +509,7 @@ const UserPanel = () => {
                       if (key === 'cart') {
                         return (
                           <th key="cart" className="cart-column">
-                            {t('Cart', 'السلة', 'Carrito')}
+                            {t('Cart', 'السلة', 'Carrito', 'Sepet')}
                           </th>
                         );
                       }
@@ -435,57 +518,84 @@ const UserPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {classes.map((item: ClassRecord) => (
+                  {visibleClasses.map((item: ClassRecord) => (
                     <tr key={item.id}>
                       {tableColumns.map((key) => {
                         if (key === 'cart') {
                           return (
                             <td key="cart" className={`cart-column ${isMobileView ? 'cart-column--mobile' : ''}`}>
-                        {(() => {
-                          const quantity = getCartQuantity(item.id);
-                          const isExpanded = quantity > 0 || expandedControls[item.id];
-                          if (!isExpanded) {
-                            return (
-                              <button
-                                type="button"
-                                className="cart-icon-trigger"
-                                onClick={async () => {
-                                  await handleIncrease(item);
-                                }}
-                                aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')}
-                              >
-                                <CartIconGlyph />
-                              </button>
-                            );
-                          }
-                          return (
-                            <div className="table-cart-control">
-                              <button
-                                type="button"
-                                className="table-cart-btn table-cart-btn--minus"
-                                onClick={async () => { await handleDecrease(item); }}
-                                aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad')}
-                                disabled={quantity === 0}
-                              >
-                                −
-                              </button>
-                              <span className="table-cart-value">
-                                {quantity === 0 ? t('Add', 'إضافة', 'Agregar') : quantity}
-                              </span>
-                              <button
-                                type="button"
-                                className="table-cart-btn table-cart-btn--plus"
-                                onClick={async () => { await handleIncrease(item); }}
-                                aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad')}
-                              >
-                                +
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </td>
+                              {(() => {
+                                const quantity = getCartQuantity(item.id);
+                                const isExpanded = quantity > 0 || expandedControls[item.id];
+                                if (!isExpanded) {
+                                  return (
+                                    <button
+                                      type="button"
+                                      className="cart-icon-trigger"
+                                      onClick={async () => {
+                                        await handleIncrease(item);
+                                      }}
+                                      aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito', 'Sepete ekle')}
+                                    >
+                                      <CartIconGlyph />
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <div className="table-cart-control">
+                                    <button
+                                      type="button"
+                                      className="table-cart-btn table-cart-btn--minus"
+                                      onClick={async () => { await handleDecrease(item); }}
+                                      aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad', 'Miktarı azalt')}
+                                      disabled={quantity === 0}
+                                    >
+                                      −
+                                    </button>
+                                    <span className="table-cart-value">
+                                      {quantity === 0 ? t('Add', 'إضافة', 'Agregar', 'Ekle') : quantity}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="table-cart-btn table-cart-btn--plus"
+                                      onClick={async () => { await handleIncrease(item); }}
+                                      aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad', 'Miktarı artır')}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                );
+                              })()}
+                            </td>
                           );
                         }
+
+                        if (key === 'specialId') {
+                          return (
+                            <td key={key}>
+                              <div className="table-cell-with-favorite">
+                                <button
+                                  type="button"
+                                  className={`favorite-toggle ${isFavorite(item.id) ? 'favorite-toggle--active' : ''}`}
+                                  onClick={() => toggleFavorite(item.id)}
+                                  aria-label={isFavorite(item.id)
+                                    ? t('Remove from favorites', 'إزالة من المفضلة', 'Quitar de favoritos', 'Favorilerden kaldır')
+                                    : t('Add to favorites', 'إضافة إلى المفضلة', 'Agregar a favoritos', 'Favorilere ekle')}
+                                >
+                                  <HeartIcon active={isFavorite(item.id)} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="table-link"
+                                  onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}`)}
+                                >
+                                  {renderCell(item, key)}
+                                </button>
+                              </div>
+                            </td>
+                          );
+                        }
+
                         return <td key={key}>{renderCell(item, key)}</td>;
                       })}
                     </tr>
@@ -495,7 +605,7 @@ const UserPanel = () => {
             </div>
           ) : (
             <div className="catalog-card-grid">
-              {classes.map((item) => (
+              {visibleClasses.map((item) => (
                 <article key={item.id} className="catalog-card">
                   <div className="catalog-card__header-row">
                     <header className="catalog-card__header">
@@ -503,7 +613,13 @@ const UserPanel = () => {
                           {renderCell(item, 'specialId')}
                         </span>
                         <h3>
-                          {renderCell(item, 'className') as React.ReactNode}
+                          <button
+                            type="button"
+                            className="catalog-card__title-link"
+                            onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}`)}
+                          >
+                            {renderCell(item, 'className') as React.ReactNode}
+                          </button>
                         </h3>
                       {columnVisibility.quality && (
                         <p>{renderCell(item, 'quality')}</p>
@@ -520,6 +636,15 @@ const UserPanel = () => {
                           })()}
                           variant="card"
                         />
+                        {item.classVideo && item.classVideo.startsWith('/uploads/') && (
+                          <a
+                            href={resolveVideoSrc(item.classVideo) || undefined}
+                            download
+                            className="catalog-card__download-link"
+                          >
+                            {t('Download video', 'تحميل الفيديو', 'Descargar video')}
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>
@@ -527,35 +652,35 @@ const UserPanel = () => {
                     <dl>
                       {columnVisibility.mainCategory && (
                         <div>
-                          <dt>{t('Main Category', 'الفئة الرئيسية', 'Categoría Principal')}</dt>
+                          <dt>{t('Main Category', 'الفئة الرئيسية', 'Categoría Principal', 'Ana Kategori')}</dt>
                           <dd>{renderCell(item, 'mainCategory')}</dd>
                         </div>
                       )}
                       {columnVisibility.classFeatures && (
                         <div>
-                          <dt>{t('Features', 'المميزات', 'Características')}</dt>
+                          <dt>{t('Features', 'المميزات', 'Características', 'Özellikler')}</dt>
                           <dd>{renderCell(item, 'classFeatures')}</dd>
                         </div>
                       )}
                       {columnVisibility.classWeight && (
                         <div>
-                          <dt>{t('Weight', 'الوزن', 'Peso')}</dt>
+                          <dt>{t('Weight', 'الوزن', 'Peso', 'Ağırlık')}</dt>
                           <dd>{formatNumber(item.classWeight, 'kg')}</dd>
                         </div>
                       )}
                       {columnVisibility.classQuantity && (
                         <div>
-                          <dt>{t('Quantity', 'الكمية', 'Cantidad')}</dt>
+                          <dt>{t('Quantity', 'الكمية', 'Cantidad', 'Miktar')}</dt>
                           <dd>{item.classQuantity !== null && item.classQuantity !== undefined ? String(item.classQuantity) : '—'}</dd>
                         </div>
                       )}
                       {columnVisibility.classPrice && (
                         <div>
-                          <dt>{t('Price', 'السعر', 'Precio')}</dt>
+                          <dt>{t('Price', 'السعر', 'Precio', 'Fiyat')}</dt>
                           <dd>
                             {item.classPrice !== null && item.classPrice !== undefined
                               ? `$${formatNumber(item.classPrice)}`
-                              : t('Price on request', 'السعر عند الطلب', 'Precio a solicitud')}
+                              : t('Price on request', 'السعر عند الطلب', 'Precio a solicitud', 'Fiyat için iletişime geçin')}
                           </dd>
                         </div>
                       )}
@@ -565,46 +690,58 @@ const UserPanel = () => {
                     {(() => {
                       const quantity = getCartQuantity(item.id);
                       const isExpanded = quantity > 0 || expandedControls[item.id];
-                      if (!isExpanded) {
-                        return (
-                          <button
-                            type="button"
-                            className="cart-icon-trigger cart-icon-trigger--card"
-                            onClick={async () => {
-                              await handleIncrease(item);
-                            }}
-                            aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')}
-                          >
-                            <CartIconGlyph />
-                          </button>
-                        );
-                      }
+
                       return (
-                        <div className="card-cart-control">
+                        <div className="card-actions-with-favorite">
                           <button
                             type="button"
-                            className="card-cart-btn card-cart-btn--minus"
-                            onClick={async () => { await handleDecrease(item); }}
-                            aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad')}
-                            disabled={quantity === 0}
+                            className={`favorite-toggle favorite-toggle--inline ${isFavorite(item.id) ? 'favorite-toggle--active' : ''}`}
+                            onClick={() => toggleFavorite(item.id)}
+                            aria-label={isFavorite(item.id)
+                              ? t('Remove from favorites', 'إزالة من المفضلة', 'Quitar de favoritos', 'Favorilerden kaldır')
+                              : t('Add to favorites', 'إضافة إلى المفضلة', 'Agregar a favoritos', 'Favorilere ekle')}
                           >
-                            −
+                            <HeartIcon active={isFavorite(item.id)} />
                           </button>
-                          <span className="card-cart-value">
-                            {quantity === 0
-                              ? isMobileView
-                              ? t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito')
-                                : '0'
-                              : quantity}
-                          </span>
-                          <button
-                            type="button"
-                            className="card-cart-btn card-cart-btn--plus"
-                            onClick={async () => { await handleIncrease(item); }}
-                            aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad')}
-                          >
-                            +
-                          </button>
+                          {!isExpanded ? (
+                            <button
+                              type="button"
+                              className="cart-icon-trigger cart-icon-trigger--card"
+                              onClick={async () => {
+                                await handleIncrease(item);
+                              }}
+                              aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito', 'Sepete ekle')}
+                            >
+                              <CartIconGlyph />
+                            </button>
+                          ) : (
+                            <div className="card-cart-control">
+                              <button
+                                type="button"
+                                className="card-cart-btn card-cart-btn--minus"
+                                onClick={async () => { await handleDecrease(item); }}
+                            aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad', 'Miktarı azalt')}
+                                disabled={quantity === 0}
+                              >
+                                −
+                              </button>
+                              <span className="card-cart-value">
+                                {quantity === 0
+                                  ? isMobileView
+                                    ? t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito', 'Sepete ekle')
+                                    : '0'
+                                  : quantity}
+                              </span>
+                              <button
+                                type="button"
+                                className="card-cart-btn card-cart-btn--plus"
+                                onClick={async () => { await handleIncrease(item); }}
+                                aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad', 'Miktarı artır')}
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}

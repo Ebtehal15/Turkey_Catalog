@@ -5,12 +5,15 @@ const useTranslate = () => {
   const { language, ...rest } = useLanguage();
 
   const t = useCallback(
-    (english: string, arabic?: string, spanish?: string) => {
+    (english: string, arabic?: string, spanish?: string, turkish?: string) => {
       if (language === 'ar') {
         return arabic ?? english;
       }
       if (language === 'es') {
         return spanish ?? english;
+      }
+      if (language === 'tr') {
+        return turkish ?? english;
       }
       return english;
     },
