@@ -161,6 +161,20 @@ button {
   font-size: 0.9rem;
 }
 
+.nav__brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+  font: inherit;
+}
+
+.nav__brand-link:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
 .nav__brand img {
   width: 40px;
   height: 40px;

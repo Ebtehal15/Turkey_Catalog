@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation, useSearchParams } from 'react-router-dom';
+import { NavLink, Link, useLocation, useSearchParams } from 'react-router-dom';
 import logoUrl from '../assets/ajlogo.png';
 import { useAdminAccess } from '../context/AdminAccessContext';
 import { usePassword } from '../context/PasswordContext';
@@ -133,8 +133,17 @@ const NavBar = () => {
   return (
     <header className="nav">
       <div className="nav__brand">
-        <img src={logoUrl} alt="Product Catalog logo" />
-        <span>{labels.brand}</span>
+        {!isSharedView ? (
+          <Link to="/catalog" className="nav__brand-link">
+            <img src={logoUrl} alt="Product Catalog logo" />
+            <span>{labels.brand}</span>
+          </Link>
+        ) : (
+          <>
+            <img src={logoUrl} alt="Product Catalog logo" />
+            <span>{labels.brand}</span>
+          </>
+        )}
         {isSharedView && renderLangSelector()}
       </div>
       <nav className="nav__links">
