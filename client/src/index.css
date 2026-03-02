@@ -3122,9 +3122,9 @@ button.danger:hover:not(:disabled) {
 .share-modal__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   margin-top: 0.25rem;
 }
@@ -3132,8 +3132,10 @@ button.danger:hover:not(:disabled) {
 .share-modal__btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
+  padding: 0 1rem;
+  min-height: 44px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.8rem;
@@ -3143,11 +3145,13 @@ button.danger:hover:not(:disabled) {
 }
 
 .share-modal__btn--icon {
-  padding: 0.5rem;
-  width: 38px;
-  height: 38px;
+  padding: 0;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 8px;
 }
 
 .share-modal__btn--primary {
@@ -3184,9 +3188,12 @@ button.danger:hover:not(:disabled) {
   box-shadow: none;
   outline: none;
   color: #22c55e;
-  width: 54px;
-  height: 54px;
-  padding: 0.5rem;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .share-modal__btn--whatsapp:hover {
