@@ -2527,21 +2527,25 @@ button.danger:hover:not(:disabled) {
 .share-qr-toggle {
   border: none !important;
   background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.2rem;
-  border-radius: 999px;
   color: #64748b;
   width: 32px;
   height: 32px;
   transition: color 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .share-qr-toggle:hover {
   color: var(--color-primary);
   transform: scale(1.05);
+  background: transparent !important;
+  border: none !important;
 }
 
 .share-qr-toggle--inline {
@@ -2688,20 +2692,22 @@ button.danger:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   color: #475569;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .item-detail__share-btn:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
 }
 
 .item-detail__card {
