@@ -572,7 +572,10 @@ const UserPanel = () => {
                 </thead>
                 <tbody>
                   {visibleClasses.map((item: ClassRecord) => (
-                    <tr key={item.id}>
+                    <tr
+                      key={item.id}
+                      onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}`)}
+                    >
                       {tableColumns.map((key) => {
                         if (key === 'cart') {
                           return (
@@ -585,7 +588,8 @@ const UserPanel = () => {
                                     <button
                                       type="button"
                                       className="cart-icon-trigger"
-                                      onClick={async () => {
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
                                         await handleIncrease(item);
                                       }}
                                       aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito', 'Sepete ekle')}
@@ -599,7 +603,10 @@ const UserPanel = () => {
                                     <button
                                       type="button"
                                       className="table-cart-btn table-cart-btn--minus"
-                                      onClick={async () => { await handleDecrease(item); }}
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
+                                        await handleDecrease(item);
+                                      }}
                                       aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad', 'Miktarı azalt')}
                                       disabled={quantity === 0}
                                     >
@@ -611,7 +618,10 @@ const UserPanel = () => {
                                     <button
                                       type="button"
                                       className="table-cart-btn table-cart-btn--plus"
-                                      onClick={async () => { await handleIncrease(item); }}
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
+                                        await handleIncrease(item);
+                                      }}
                                       aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad', 'Miktarı artır')}
                                     >
                                       +
@@ -630,7 +640,10 @@ const UserPanel = () => {
                                 <button
                                   type="button"
                                   className={`favorite-toggle ${isFavorite(item.id) ? 'favorite-toggle--active' : ''}`}
-                                  onClick={() => toggleFavorite(item.id)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggleFavorite(item.id);
+                                  }}
                                   aria-label={isFavorite(item.id)
                                     ? t('Remove from favorites', 'إزالة من المفضلة', 'Quitar de favoritos', 'Favorilerden kaldır')
                                     : t('Add to favorites', 'إضافة إلى المفضلة', 'Agregar a favoritos', 'Favorilere ekle')}
@@ -640,7 +653,10 @@ const UserPanel = () => {
                                 <button
                                   type="button"
                                   className="share-qr-toggle"
-                                  onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`);
+                                  }}
                                   aria-label={t('Share / QR', 'مشاركة / رمز QR', 'Compartir / QR', 'Paylaş / QR')}
                                 >
                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -659,7 +675,10 @@ const UserPanel = () => {
                                 <button
                                   type="button"
                                   className="table-link"
-                                  onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}`)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    navigate(`/items/${encodeURIComponent(item.specialId)}`);
+                                  }}
                                 >
                                   {renderCell(item, key)}
                                 </button>
@@ -768,7 +787,10 @@ const UserPanel = () => {
                           <button
                             type="button"
                             className={`favorite-toggle favorite-toggle--inline ${isFavorite(item.id) ? 'favorite-toggle--active' : ''}`}
-                            onClick={() => toggleFavorite(item.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleFavorite(item.id);
+                            }}
                             aria-label={isFavorite(item.id)
                               ? t('Remove from favorites', 'إزالة من المفضلة', 'Quitar de favoritos', 'Favorilerden kaldır')
                               : t('Add to favorites', 'إضافة إلى المفضلة', 'Agregar a favoritos', 'Favorilere ekle')}
@@ -778,7 +800,10 @@ const UserPanel = () => {
                           <button
                             type="button"
                             className="share-qr-toggle share-qr-toggle--inline"
-                            onClick={() => navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              navigate(`/items/${encodeURIComponent(item.specialId)}?share=1`);
+                            }}
                             aria-label={t('Share / QR', 'مشاركة / رمز QR', 'Compartir / QR', 'Paylaş / QR')}
                           >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -798,7 +823,8 @@ const UserPanel = () => {
                             <button
                               type="button"
                               className="cart-icon-trigger cart-icon-trigger--card"
-                              onClick={async () => {
+                              onClick={async (event) => {
+                                event.stopPropagation();
                                 await handleIncrease(item);
                               }}
                               aria-label={t('Add to cart', 'أضف إلى السلة', 'Añadir al carrito', 'Sepete ekle')}
@@ -810,8 +836,11 @@ const UserPanel = () => {
                               <button
                                 type="button"
                                 className="card-cart-btn card-cart-btn--minus"
-                                onClick={async () => { await handleDecrease(item); }}
-                            aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad', 'Miktarı azalt')}
+                                onClick={async (event) => {
+                                  event.stopPropagation();
+                                  await handleDecrease(item);
+                                }}
+                                aria-label={t('Decrease quantity', 'تقليل الكمية', 'Disminuir cantidad', 'Miktarı azalt')}
                                 disabled={quantity === 0}
                               >
                                 −
@@ -826,7 +855,10 @@ const UserPanel = () => {
                               <button
                                 type="button"
                                 className="card-cart-btn card-cart-btn--plus"
-                                onClick={async () => { await handleIncrease(item); }}
+                                onClick={async (event) => {
+                                  event.stopPropagation();
+                                  await handleIncrease(item);
+                                }}
                                 aria-label={t('Increase quantity', 'زيادة الكمية', 'Aumentar cantidad', 'Miktarı artır')}
                               >
                                 +

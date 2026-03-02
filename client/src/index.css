@@ -3451,6 +3451,7 @@ tbody tr:nth-child(even) {
 
 tbody tr:hover {
   background: rgba(59, 130, 246, 0.12);
+  cursor: pointer;
 }
 
 .table__actions {
@@ -4607,6 +4608,7 @@ span.card-cart-value,
   .table-scroll tbody tr {
     height: auto;
     min-height: 38px;
+    cursor: pointer;
   }
 
   /* Cart column içeren satırlar daha düşük */
