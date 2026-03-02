@@ -3138,6 +3138,8 @@ button.danger:hover:not(:disabled) {
   align-items: stretch;
   width: 100%;
   margin-top: 0.25rem;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
 }
 
 .share-modal__btn {
@@ -3216,6 +3218,8 @@ button.danger:hover:not(:disabled) {
   min-height: 44px;
   padding: 0;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
 }
 
 .share-modal__btn--whatsapp:hover {
