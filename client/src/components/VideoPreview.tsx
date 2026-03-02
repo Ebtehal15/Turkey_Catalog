@@ -1,12 +1,14 @@
+import type React from 'react';
 import useTranslate from '../hooks/useTranslate';
 
 interface VideoPreviewProps {
   src?: string | null;
   title: string;
   variant?: 'inline' | 'icon' | 'card';
+  disableCardModal?: boolean;
 }
 
-const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => {
+const VideoPreview = ({ src, title, variant = 'inline', disableCardModal }: VideoPreviewProps) => {
   const { language, t } = useTranslate();
 
   if (!src) {
@@ -157,8 +159,16 @@ const VideoPreview = ({ src, title, variant = 'inline' }: VideoPreviewProps) => 
         ? getStreamableThumbnail(src)
         : null;
 
+    const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
+      if (disableCardModal) {
+        return;
+      }
+      event.stopPropagation();
+      openInlineModal();
+    };
+
     return (
-      <div className="video-card-preview" onClick={openInlineModal}>
+      <div className="video-card-preview" onClick={handleCardClick}>
         {thumbnailUrl ? (
           <div className="video-card-thumbnail">
             <img src={thumbnailUrl} alt={title} />

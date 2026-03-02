@@ -56,46 +56,11 @@ const ItemDetail = () => {
       .slice(0, 12);
   }, [data, similarClasses]);
 
-  const shouldShowSimilar = !isStandaloneUrl || shareMode === 'item-with-similar';
+  const shouldShowSimilar = !isStandaloneUrl || shareMode !== 'item';
 
   const similarScrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStart = useRef({ x: 0, scrollLeft: 0 });
-  const didDrag = useRef(false);
-  const pointerIdRef = useRef<number | null>(null);
 
-  const handleSimilarPointerDown = useCallback((e: React.PointerEvent) => {
-    const el = similarScrollRef.current;
-    if (!el) return;
-    pointerIdRef.current = e.pointerId;
-    el.setPointerCapture(e.pointerId);
-    didDrag.current = false;
-    setIsDragging(true);
-    dragStart.current = { x: e.clientX, scrollLeft: el.scrollLeft };
-  }, []);
-
-  const handleSimilarPointerMove = useCallback((e: React.PointerEvent) => {
-    const el = similarScrollRef.current;
-    if (!el || pointerIdRef.current === null) return;
-    const dx = e.clientX - dragStart.current.x;
-    if (Math.abs(dx) > 3) didDrag.current = true;
-    el.scrollLeft = dragStart.current.scrollLeft - dx;
-  }, []);
-
-  const handleSimilarPointerUp = useCallback(() => {
-    const el = similarScrollRef.current;
-    if (el && pointerIdRef.current !== null) {
-      try { el.releasePointerCapture(pointerIdRef.current); } catch {}
-      pointerIdRef.current = null;
-    }
-    setIsDragging(false);
-  }, []);
-
-  const handleSimilarCardClick = useCallback((e: React.MouseEvent, item: ClassRecord) => {
-    if (didDrag.current) {
-      e.preventDefault();
-      return;
-    }
+  const handleSimilarCardClick = useCallback((item: ClassRecord) => {
     navigate(`/items/${encodeURIComponent(item.specialId)}`);
   }, [navigate]);
 
@@ -267,11 +232,7 @@ const ItemDetail = () => {
                 </button>
                 <div
                   ref={similarScrollRef}
-                  className={`item-detail__similar-scroll-wrap ${isDragging ? 'item-detail__similar-scroll-wrap--dragging' : ''}`}
-                  onPointerDown={handleSimilarPointerDown}
-                  onPointerMove={handleSimilarPointerMove}
-                  onPointerUp={() => handleSimilarPointerUp()}
-                  onPointerLeave={() => handleSimilarPointerUp()}
+                  className="item-detail__similar-scroll-wrap"
                 >
                 <div className="item-detail__similar-track">
                   {similarWithVideo.map((item) => {
@@ -281,13 +242,14 @@ const ItemDetail = () => {
                         key={item.id}
                         type="button"
                         className="item-detail__similar-card"
-                        onClick={(e) => handleSimilarCardClick(e, item)}
+                        onClick={() => handleSimilarCardClick(item)}
                       >
                         <div className="item-detail__similar-video">
                           <VideoPreview
                             src={resolveVideoSrc(item.classVideo)}
                             title={itemTitle}
                             variant="card"
+                            disableCardModal
                           />
                         </div>
                         <div className="item-detail__similar-meta">
