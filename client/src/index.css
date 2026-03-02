@@ -2835,6 +2835,144 @@ button.danger:hover:not(:disabled) {
   line-height: 1.6;
 }
 
+.item-detail__similar {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.item-detail__similar h2,
+.item-detail__similar-heading {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.item-detail__similar-emoji {
+  font-size: 1.2rem;
+}
+
+.item-detail__similar-nav-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-detail__similar-arrow {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.item-detail__similar-arrow:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: var(--color-primary);
+}
+
+.item-detail__similar-arrow:active {
+  transform: scale(0.96);
+}
+
+.item-detail__similar-scroll-wrap {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0;
+  scroll-behavior: smooth;
+  cursor: grab;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.item-detail__similar-scroll-wrap--dragging {
+  cursor: grabbing;
+}
+
+.item-detail__similar-scroll-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.item-detail__similar-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  padding: 0 0.5rem 0.5rem;
+}
+
+.item-detail__similar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-shrink: 0;
+  width: 180px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item-detail__similar-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.item-detail__similar-video {
+  aspect-ratio: 16 / 9;
+  min-height: 90px;
+  overflow: hidden;
+}
+
+.item-detail__similar-video .video-card-preview,
+.item-detail__similar-video .video-card-thumbnail {
+  width: 100%;
+  height: 100%;
+}
+
+.item-detail__similar-video .video-card-thumbnail img,
+.item-detail__similar-video .video-card-thumbnail video {
+  object-fit: cover;
+}
+
+.item-detail__similar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  gap: 0.5rem;
+}
+
+.item-detail__similar-code {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+}
+
+.item-detail__similar-group {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 .share-modal-overlay {
   position: fixed;
   inset: 0;

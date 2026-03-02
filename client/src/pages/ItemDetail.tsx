@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ClassRecord } from '../types';
-import { fetchClassByIdentifier } from '../api/classes';
+import { fetchClassByIdentifier, fetchClasses } from '../api/classes';
 import useTranslate from '../hooks/useTranslate';
 import { usePassword } from '../context/PasswordContext';
 import VideoPreview from '../components/VideoPreview';
@@ -41,6 +41,66 @@ const ItemDetail = () => {
     enabled: Boolean(identifier),
     queryFn: () => fetchClassByIdentifier(identifier ?? ''),
   });
+
+  const { data: similarClasses = [] } = useQuery<ClassRecord[]>({
+    queryKey: ['classes', 'similar', data?.mainCategory],
+    enabled: Boolean(data?.mainCategory),
+    queryFn: () => fetchClasses({ category: data!.mainCategory }),
+  });
+
+  const similarWithVideo = useMemo(() => {
+    if (!data || !similarClasses.length) return [];
+    return similarClasses
+      .filter((item) => item.specialId !== data.specialId && item.classVideo)
+      .slice(0, 12);
+  }, [data, similarClasses]);
+
+  const similarScrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, scrollLeft: 0 });
+  const didDrag = useRef(false);
+  const pointerIdRef = useRef<number | null>(null);
+
+  const handleSimilarPointerDown = useCallback((e: React.PointerEvent) => {
+    const el = similarScrollRef.current;
+    if (!el) return;
+    pointerIdRef.current = e.pointerId;
+    el.setPointerCapture(e.pointerId);
+    didDrag.current = false;
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX, scrollLeft: el.scrollLeft };
+  }, []);
+
+  const handleSimilarPointerMove = useCallback((e: React.PointerEvent) => {
+    const el = similarScrollRef.current;
+    if (!el || pointerIdRef.current === null) return;
+    const dx = e.clientX - dragStart.current.x;
+    if (Math.abs(dx) > 3) didDrag.current = true;
+    el.scrollLeft = dragStart.current.scrollLeft - dx;
+  }, []);
+
+  const handleSimilarPointerUp = useCallback(() => {
+    const el = similarScrollRef.current;
+    if (el && pointerIdRef.current !== null) {
+      try { el.releasePointerCapture(pointerIdRef.current); } catch {}
+      pointerIdRef.current = null;
+    }
+    setIsDragging(false);
+  }, []);
+
+  const handleSimilarCardClick = useCallback((e: React.MouseEvent, item: ClassRecord) => {
+    if (didDrag.current) {
+      e.preventDefault();
+      return;
+    }
+    navigate(`/items/${encodeURIComponent(item.specialId)}`);
+  }, [navigate]);
+
+  const scrollSimilarBy = useCallback((delta: number) => {
+    const el = similarScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
+  }, []);
 
   const title = useMemo(() => {
     if (!data) return '';
@@ -173,6 +233,71 @@ const ItemDetail = () => {
             <div className="item-detail__features">
               <h2>{t('Features', 'المميزات', 'Características')}</h2>
               <p>{data.classFeatures}</p>
+            </div>
+          )}
+
+          {similarWithVideo.length > 0 && (
+            <div className="item-detail__similar">
+              <h2 className="item-detail__similar-heading">
+                <span className="item-detail__similar-emoji">✨</span>
+                {t('Similar items', 'عناصر مشابهة', 'Elementos similares', 'Benzer öğeler')}
+              </h2>
+              <div className="item-detail__similar-nav-wrap">
+                <button
+                  type="button"
+                  className="item-detail__similar-arrow item-detail__similar-arrow--prev"
+                  onClick={() => scrollSimilarBy(-220)}
+                  aria-label={t('Scroll left', 'تمرير لليسار', 'Desplazar a la izquierda', 'Sola kaydır')}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <div
+                  ref={similarScrollRef}
+                  className={`item-detail__similar-scroll-wrap ${isDragging ? 'item-detail__similar-scroll-wrap--dragging' : ''}`}
+                  onPointerDown={handleSimilarPointerDown}
+                  onPointerMove={handleSimilarPointerMove}
+                  onPointerUp={() => handleSimilarPointerUp()}
+                  onPointerLeave={() => handleSimilarPointerUp()}
+                >
+                <div className="item-detail__similar-track">
+                  {similarWithVideo.map((item) => {
+                    const itemTitle = language === 'ar' && item.classNameArabic ? item.classNameArabic : (language === 'en' && item.classNameEnglish ? item.classNameEnglish : item.className);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="item-detail__similar-card"
+                        onClick={(e) => handleSimilarCardClick(e, item)}
+                      >
+                        <div className="item-detail__similar-video">
+                          <VideoPreview
+                            src={resolveVideoSrc(item.classVideo)}
+                            title={itemTitle}
+                            variant="card"
+                          />
+                        </div>
+                        <div className="item-detail__similar-meta">
+                          <span className="item-detail__similar-code">{item.specialId}</span>
+                          <span className="item-detail__similar-group">{item.quality || '—'}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                </div>
+                <button
+                  type="button"
+                  className="item-detail__similar-arrow item-detail__similar-arrow--next"
+                  onClick={() => scrollSimilarBy(220)}
+                  aria-label={t('Scroll right', 'تمرير لليمين', 'Desplazar a la derecha', 'Sağa kaydır')}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
         </div>
