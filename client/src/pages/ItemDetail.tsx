@@ -28,6 +28,7 @@ const ItemDetail = () => {
   const [searchParams] = useSearchParams();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const isStandaloneUrl = searchParams.get('standalone') === '1';
+  const shareMode = searchParams.get('mode');
   const isSharedView = role === 'none' || isStandaloneUrl;
 
   useEffect(() => {
@@ -54,6 +55,8 @@ const ItemDetail = () => {
       .filter((item) => item.specialId !== data.specialId && item.classVideo)
       .slice(0, 12);
   }, [data, similarClasses]);
+
+  const shouldShowSimilar = !isStandaloneUrl || shareMode === 'item-with-similar';
 
   const similarScrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -134,8 +137,16 @@ const ItemDetail = () => {
     );
   }
 
-  const shareUrl = typeof window !== 'undefined' && identifier
-    ? `${window.location.origin}/items/${encodeURIComponent(identifier)}?standalone=1`
+  const baseShareUrl = typeof window !== 'undefined' && identifier
+    ? `${window.location.origin}/items/${encodeURIComponent(identifier)}`
+    : '';
+
+  const itemOnlyUrl = baseShareUrl
+    ? `${baseShareUrl}?standalone=1&mode=item`
+    : '';
+
+  const itemWithSimilarUrl = baseShareUrl
+    ? `${baseShareUrl}?standalone=1&mode=item-with-similar`
     : '';
 
   return (
@@ -152,7 +163,7 @@ const ItemDetail = () => {
             {t('Back to catalog', 'العودة إلى الكتالوج', 'Volver al catálogo')}
           </button>
         )}
-        {shareUrl && (
+        {baseShareUrl && (
           <button
             type="button"
             className="item-detail__share-btn"
@@ -179,7 +190,8 @@ const ItemDetail = () => {
       <ProductShareModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        productUrl={shareUrl}
+        itemOnlyUrl={itemOnlyUrl}
+        itemWithSimilarUrl={itemWithSimilarUrl}
         productName={title}
       />
 
@@ -236,7 +248,7 @@ const ItemDetail = () => {
             </div>
           )}
 
-          {similarWithVideo.length > 0 && (
+          {shouldShowSimilar && similarWithVideo.length > 0 && (
             <div className="item-detail__similar">
               <h2 className="item-detail__similar-heading">
                 <span className="item-detail__similar-emoji">✨</span>

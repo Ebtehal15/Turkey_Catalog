@@ -5,14 +5,24 @@ import useTranslate from '../hooks/useTranslate';
 interface ProductShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  productUrl: string;
+  itemOnlyUrl: string;
+  itemWithSimilarUrl: string;
   productName?: string;
 }
 
-const ProductShareModal = ({ isOpen, onClose, productUrl, productName }: ProductShareModalProps) => {
+const ProductShareModal = ({
+  isOpen,
+  onClose,
+  itemOnlyUrl,
+  itemWithSimilarUrl,
+  productName,
+}: ProductShareModalProps) => {
   const { t } = useTranslate();
   const qrRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<'item' | 'item-with-similar'>('item');
+
+  const currentUrl = mode === 'item' ? itemOnlyUrl : itemWithSimilarUrl;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,13 +50,13 @@ const ProductShareModal = ({ isOpen, onClose, productUrl, productName }: Product
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(productUrl);
+      await navigator.clipboard.writeText(currentUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = productUrl;
+      textArea.value = currentUrl;
       textArea.style.position = 'fixed';
       textArea.style.opacity = '0';
       document.body.appendChild(textArea);
@@ -89,14 +99,30 @@ const ProductShareModal = ({ isOpen, onClose, productUrl, productName }: Product
               'Bu ürünü telefonunuzda açmak için QR kodu tarayın.',
             )}
           </p>
+          <div className="share-modal__mode-toggle">
+            <button
+              type="button"
+              className={`share-modal__mode-btn ${mode === 'item' ? 'share-modal__mode-btn--active' : ''}`}
+              onClick={() => setMode('item')}
+            >
+              {t('Only this item', 'فقط هذا المنتج', 'Solo este producto', 'Sadece bu ürün')}
+            </button>
+            <button
+              type="button"
+              className={`share-modal__mode-btn ${mode === 'item-with-similar' ? 'share-modal__mode-btn--active' : ''}`}
+              onClick={() => setMode('item-with-similar')}
+            >
+              {t('Item + similar items', 'المنتج + العناصر المشابهة', 'Producto + similares', 'Ürün + benzer ürünler')}
+            </button>
+          </div>
           <div className="share-modal__qr-wrap">
-            <QRCodeCanvas ref={qrRef} value={productUrl} size={220} level="M" />
+            <QRCodeCanvas ref={qrRef} value={currentUrl} size={220} level="M" />
           </div>
           {productName && (
             <p className="share-modal__product">{productName}</p>
           )}
-          <p className="share-modal__url" title={productUrl}>
-            {productUrl}
+          <p className="share-modal__url" title={currentUrl}>
+            {currentUrl}
           </p>
           <div className="share-modal__actions">
             <button
