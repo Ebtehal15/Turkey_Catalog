@@ -1,0 +1,23 @@
+{
+  "name": "Turkey_Catalog",
+  "short_name": "Turkey_Catalog",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/ajlogo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/ajlogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
