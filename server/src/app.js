@@ -4,7 +4,7 @@ const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { initializeDatabase } = require('./db');
+const { initializeDatabase, db } = require('./db');
 const classesRouter = require('./routes/classes');
 const { router: settingsRouter } = require('./routes/settings');
 const cartRouter = require('./routes/cart');
@@ -135,6 +135,59 @@ app.use(
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+// ✅ WhatsApp / sosyal medya botları için OG meta (zengin link önizleme)
+const BOT_UA =
+  /WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot|Slackbot|Discordbot|LinkedInBot|Pinterest|Applebot|Googlebot|bingbot/i;
+app.get('/items/:identifier', (req, res, next) => {
+  const ua = req.get('User-Agent') || '';
+  if (!BOT_UA.test(ua)) return next();
+
+  const { identifier } = req.params;
+  const isNumeric = /^\d+$/.test(identifier);
+  const query = isNumeric
+    ? 'SELECT * FROM classes WHERE id = ?'
+    : 'SELECT * FROM classes WHERE LOWER(special_id) = ?';
+  const param = isNumeric ? identifier : identifier.toLowerCase();
+
+  db.get(query, [param], (err, row) => {
+    if (err || !row) return next();
+    const title = row.class_name_ar || row.class_name_en || row.class_name;
+    const desc = row.class_features || title;
+    const canonical =
+      (process.env.PUBLIC_APP_URL || req.protocol + '://' + req.get('host')) +
+      '/items/' + encodeURIComponent(row.special_id) +
+      '?standalone=1';
+    let ogImage = '';
+    const vid = row.class_video || '';
+    const yt = vid.match(/(?:youtube\.com\/.*[?&]v=|youtu\.be\/)([^"&?/\s]{11})/i);
+    if (yt) ogImage = `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`;
+    else {
+      const sm = vid.match(/streamable\.com\/([a-z0-9]+)/i);
+      if (sm) ogImage = `https://cdn-cf-east.streamable.com/image/${sm[1]}.jpg`;
+    }
+    const html = `<!DOCTYPE html><html><head>
+<meta charset="utf-8">
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${escapeHtml(row.special_id + ' - ' + title)}" />
+<meta property="og:description" content="${escapeHtml(desc)}" />
+<meta property="og:url" content="${escapeHtml(canonical)}" />
+${ogImage ? `<meta property="og:image" content="${escapeHtml(ogImage)}" />` : ''}
+<meta name="twitter:card" content="summary_large_image" />
+</head><body><p><a href="${escapeHtml(canonical)}">${escapeHtml(title)}</a></p></body></html>`;
+    res.type('html').send(html);
+  });
+});
+
+function escapeHtml(s) {
+  if (typeof s !== 'string') return '';
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ✅ API rotaları
 app.use('/api/classes', classesRouter);

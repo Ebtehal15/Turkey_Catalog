@@ -77,6 +77,51 @@ const ItemDetail = () => {
     return data.className;
   }, [data, language]);
 
+  const shareUrlForMeta = useMemo(() => {
+    if (typeof window === 'undefined' || !identifier) return '';
+    return `${window.location.origin}/items/${encodeURIComponent(identifier)}?standalone=1`;
+  }, [identifier]);
+
+  const ogImageUrl = useMemo(() => {
+    if (typeof window === 'undefined' || !data?.classVideo) return null;
+    const src = data.classVideo;
+    const ytMatch = src.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+    const streamMatch = src.match(/streamable\.com\/([a-z0-9]+)/i);
+    if (streamMatch && streamMatch[1]) {
+      return `https://cdn-cf-east.streamable.com/image/${streamMatch[1]}.jpg`;
+    }
+    if (/^(?:https?:)?\/\//i.test(src) || src.startsWith('/')) {
+      const base = typeof window !== 'undefined' ? window.location.origin : '';
+      return src.startsWith('http') ? src : `${base}${src}`;
+    }
+    return null;
+  }, [data?.classVideo]);
+
+  useEffect(() => {
+    if (!data || !title) return;
+    const prevTitle = document.title;
+    document.title = `${data.specialId} - ${title}`;
+    const setMeta = (attr: string, value: string) => {
+      let el = document.querySelector(`meta[property="${attr}"]`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', attr);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', value);
+    };
+    setMeta('og:title', `${data.specialId} - ${title}`);
+    setMeta('og:description', data.classFeatures || title);
+    if (shareUrlForMeta) setMeta('og:url', shareUrlForMeta);
+    if (ogImageUrl) setMeta('og:image', ogImageUrl);
+    return () => {
+      document.title = prevTitle;
+    };
+  }, [data, title, shareUrlForMeta, ogImageUrl]);
+
   if (isLoading) {
     return (
       <section className="panel">
