@@ -122,7 +122,7 @@ const ProductShareModal = ({
             </button>
           </div>
           <div className="share-modal__qr-wrap">
-            <QRCodeCanvas ref={qrRef} value={currentUrl} size={220} level="M" />
+            <QRCodeCanvas ref={qrRef} value={currentUrl} size={200} level="M" />
           </div>
           {productName && (
             <p className="share-modal__product">{productName}</p>
@@ -149,7 +149,7 @@ const ProductShareModal = ({
               onClick={handleShareWhatsApp}
               aria-label={t('Share on WhatsApp', 'مشاركة عبر واتساب', 'Compartir por WhatsApp', 'WhatsApp ile paylaş')}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21.5 12.2c0 5.2-4.2 9.3-9.3 9.3-1.6 0-3.1-.4-4.4-1.1L3 21.5l1.2-4.7C3.5 15.4 3.1 14 3.1 12.5 3.2 7.4 7.3 3.3 12.4 3.3h0.1c5.1 0 9.3 4.2 9.3 8.9z" />
                 <path d="M9.5 8.7c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.4c.1.2 1.6 2.5 3.9 3.4 1.9.8 2.3.7 2.7.6.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1-.1-.2-.2-.2-.6-.4-.3-.1-1.3-.6-1.5-.7-.2-.1-.4-.1-.6.1-.2.2-.7.7-.8.8-.2.1-.3.2-.6.1-.3-.1-1.2-.4-2.2-1.4-.8-.8-1.4-1.8-1.6-2.1-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.4.1-.1.2-.2.2-.3.1-.1.1-.2.1-.3 0-.1-.1-.5-.3-.9z" fill="currentColor" stroke="none" />
               </svg>
