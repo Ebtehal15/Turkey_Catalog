@@ -17,7 +17,8 @@ const ProductShareModal = ({
   itemWithSimilarUrl,
   productName,
 }: ProductShareModalProps) => {
-  const { t } = useTranslate();
+  const { language, t } = useTranslate();
+  const isRtl = language === 'ar';
   const qrRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<'item' | 'item-with-similar'>('item');
@@ -84,7 +85,11 @@ const ProductShareModal = ({
       aria-modal="true"
       aria-label={t('Share product', 'مشاركة المنتج', 'Compartir producto', 'Ürünü paylaş')}
     >
-      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="share-modal"
+        dir={isRtl ? 'rtl' : 'ltr'}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="share-modal__header">
           <h2>{t('Share product with QR code', 'شارك المنتج عبر رمز QR', 'Compartir producto con código QR', 'Ürünü QR kod ile paylaş')}</h2>
           <button
